@@ -59,6 +59,33 @@
   font-size: 0.75rem;
 }
 
+.fc .study-post-event {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  height: 18px !important;
+  width: 18px !important;
+  margin-top: 1px !important;
+  cursor: pointer;
+}
+
+.fc .study-post-event .fc-event-title {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background-color: #64748b;
+  border-radius: 50%;
+  font-size: 10px !important;
+  font-weight: bold !important;
+  color: white !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  cursor: pointer;
+}
+
 .fc-theme-standard td,
 .fc-theme-standard th {
   border-color: #e2e8f0;

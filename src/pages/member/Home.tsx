@@ -3,6 +3,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { supabase, Announcement, AttendanceRecord } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import { BookOpen, Clock, Calendar as CalendarIcon, ArrowRight } from 'lucide-react';
 
 type MemberTab = 'home' | 'announcements' | 'upload' | 'info';
@@ -12,29 +13,40 @@ interface Props {
 }
 
 export default function Home({ onNavigate }: Props) {
+  const { profile } = useAuth();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [attendanceDates, setAttendanceDates] = useState<string[]>([]);
+  const [studyPosts, setStudyPosts] = useState<any[]>([]);
+  const [selectedPost, setSelectedPost] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!profile) return;
     fetchData();
-  }, []);
+  }, [profile]);
 
   const fetchData = async () => {
-    const [announcementsRes, attendanceRes] = await Promise.all([
+    const [announcementsRes, attendanceRes, studyPostsRes] = await Promise.all([
       supabase
         .from('announcements')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(3),
-      supabase.from('attendance_records').select('date'),
+      supabase.from('attendance_records').select('*'),
+      supabase.from('study_posts').select('*, author:profiles(name)').order('created_at', { ascending: false }),
     ]);
 
     if (announcementsRes.data) {
       setAnnouncements(announcementsRes.data as Announcement[]);
     }
-    if (attendanceRes.data) {
-      setAttendanceDates(attendanceRes.data.map((r) => r.date));
+    if (attendanceRes.data && profile) {
+      const userAttendanceDates = attendanceRes.data
+        .filter((r: AttendanceRecord) => r.present_ids.includes(profile.id))
+        .map((r: AttendanceRecord) => r.date);
+      setAttendanceDates(userAttendanceDates);
+    }
+    if (studyPostsRes.data) {
+      setStudyPosts(studyPostsRes.data);
     }
     setLoading(false);
   };
@@ -46,11 +58,39 @@ export default function Home({ onNavigate }: Props) {
     });
   };
 
-  const calendarEvents = attendanceDates.map((date) => ({
-    title: '출석',
-    date,
-    color: '#1e293b',
+  const calendarEvents = studyPosts.map((post) => ({
+    id: `post-${post.id}`,
+    title: post.author?.name?.charAt(0).toUpperCase() || '?',
+    date: post.created_at.split('T')[0],
+    classNames: ['study-post-event'],
+    extendedProps: {
+      post,
+    },
   }));
+
+  const handleEventClick = (clickInfo: any) => {
+    const post = clickInfo.event.extendedProps.post;
+    if (post) {
+      setSelectedPost(post);
+    }
+  };
+
+  const renderDayCellContent = (arg: any) => {
+    const date = arg.date;
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+      date.getDate(),
+    ).padStart(2, '0')}`;
+    const isAttendanceDay = attendanceDates.includes(dateStr);
+
+    return (
+      <div className="flex items-center gap-1 h-full">
+        {isAttendanceDay && (
+          <div className="w-2 h-2 bg-emerald-500 rounded-full flex-shrink-0" />
+        )}
+        <div>{arg.dayNumberText}</div>
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -61,13 +101,14 @@ export default function Home({ onNavigate }: Props) {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800">홈</h2>
-          <p className="text-slate-500 mt-1">최신 소식과 일정을 확인하세요.</p>
+    <>
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-800">홈</h2>
+            <p className="text-slate-500 mt-1">최신 소식과 일정을 확인하세요.</p>
+          </div>
         </div>
-      </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -132,6 +173,8 @@ export default function Home({ onNavigate }: Props) {
                 events={calendarEvents}
                 height="auto"
                 dayMaxEvents={1}
+                dayCellContent={renderDayCellContent}
+                eventClick={handleEventClick}
               />
             </div>
           </div>
@@ -155,5 +198,32 @@ export default function Home({ onNavigate }: Props) {
         </div>
       </div>
     </div>
+
+    {selectedPost && (
+      <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center px-4 py-6">
+        <div className="w-full max-w-xl bg-white rounded-3xl shadow-2xl overflow-hidden">
+          <div className="p-6">
+            <div className="flex items-start justify-between gap-4 mb-6">
+              <div>
+                <h3 className="text-2xl font-semibold text-slate-800">{selectedPost.title}</h3>
+                <p className="text-sm text-slate-500 mt-1">
+                  {selectedPost.author?.name ?? '작성자 미정'} · {formatDate(selectedPost.created_at)}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedPost(null)}
+                className="text-sm font-medium text-slate-600 hover:text-slate-900"
+              >
+                닫기
+              </button>
+            </div>
+            <div className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">
+              {selectedPost.content}
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
   );
 }

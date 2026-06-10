@@ -16,6 +16,7 @@ export default function StudyPosts() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('기타');
+  const [postDate, setPostDate] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -23,6 +24,11 @@ export default function StudyPosts() {
   useEffect(() => {
     fetchPosts();
   }, []);
+
+  const getTodayDateString = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
 
   const fetchPosts = async () => {
     const { data, error } = await supabase
@@ -48,6 +54,7 @@ export default function StudyPosts() {
       content,
       topic,
       author_id: profile.id,
+      created_at: postDate ? `${postDate}T00:00:00` : new Date().toISOString(),
     });
 
     if (error) {
@@ -57,6 +64,7 @@ export default function StudyPosts() {
       setTitle('');
       setContent('');
       setTopic('기타');
+      setPostDate('');
       setShowForm(false);
       fetchPosts();
     }
@@ -88,7 +96,10 @@ export default function StudyPosts() {
           <p className="text-slate-500 mt-1">스터디 내용을 공유하고 기록하세요.</p>
         </div>
         <button
-          onClick={() => setShowForm(true)}
+          onClick={() => {
+            setShowForm(true);
+            setPostDate(getTodayDateString());
+          }}
           className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors"
         >
           <Plus className="w-4 h-4" />
@@ -119,7 +130,10 @@ export default function StudyPosts() {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-slate-800">새 글 작성</h3>
               <button
-                onClick={() => setShowForm(false)}
+                onClick={() => {
+                  setShowForm(false);
+                  setPostDate('');
+                }}
                 className="text-slate-400 hover:text-slate-600"
               >
                 <X className="w-6 h-6" />
@@ -141,6 +155,18 @@ export default function StudyPosts() {
                   <option value="기획">기획</option>
                   <option value="기타">기타</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  날짜
+                </label>
+                <input
+                  type="date"
+                  value={postDate}
+                  onChange={(e) => setPostDate(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-800"
+                />
               </div>
 
               <div>
@@ -174,7 +200,10 @@ export default function StudyPosts() {
               <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowForm(false)}
+                  onClick={() => {
+                    setShowForm(false);
+                    setPostDate('');
+                  }}
                   className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                 >
                   취소
@@ -217,9 +246,9 @@ export default function StudyPosts() {
                   </span>
                 )}
               </div>
-              <div className="flex items-center justify-between gap-3 mb-2 text-slate-500 text-sm">
+              <div className="flex items-center justify-between gap-3 mb-2">
                 <h4 className="font-medium text-slate-800">{post.title}</h4>
-                <span>{post.author?.name ?? '작성자 미정'}</span>
+                <span className="text-xs text-slate-500">{post.author?.name ?? '작성자 미정'}</span>
               </div>
               <p className="text-sm text-slate-600 mt-2 whitespace-pre-wrap line-clamp-3">
                 {post.content}

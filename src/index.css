@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.fc {
+  font-family: inherit;
+}
+
+.fc .fc-button {
+  background-color: #1e293b;
+  border-color: #1e293b;
+}
+
+.fc .fc-button:hover {
+  background-color: #334155;
+  border-color: #334155;
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  background-color: #334155;
+  border-color: #334155;
+}
+
+.fc .fc-button-primary:disabled {
+  background-color: #94a3b8;
+  border-color: #94a3b8;
+}
+
+.fc .fc-toolbar-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.fc .fc-col-header-cell-cushion {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.fc .fc-daygrid-day-number {
+  color: #334155;
+  font-weight: 500;
+}
+
+.fc .fc-daygrid-day.fc-day-today {
+  background-color: #f1f5f9;
+}
+
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  color: #1e293b;
+  font-weight: 700;
+}
+
+.fc .fc-event {
+  border: none;
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 0.75rem;
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border-color: #e2e8f0;
+}

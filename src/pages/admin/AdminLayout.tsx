@@ -3,18 +3,56 @@ import { useAuth } from '../../contexts/AuthContext';
 import ApprovalList from './ApprovalList';
 import AnnouncementManager from './AnnouncementManager';
 import AttendanceManager from './AttendanceManager';
-import { Users, FileText, CalendarCheck, LogOut, BookOpen } from 'lucide-react';
+import Home from '../member/Home';
+import StudyPosts from '../member/StudyPosts';
+import MyInfo from '../member/MyInfo';
+import {
+  Users,
+  FileText,
+  CalendarCheck,
+  LogOut,
+  BookOpen,
+  HomeIcon,
+  Upload,
+  User,
+} from 'lucide-react';
 
-type AdminTab = 'approval' | 'announcements' | 'attendance';
+type MemberTab = 'home' | 'announcements' | 'upload' | 'info';
+type AdminTab =
+  | 'approval'
+  | 'announcementManager'
+  | 'attendance'
+  | 'home'
+  | 'upload'
+  | 'info';
 
 export default function AdminLayout() {
   const { signOut, profile } = useAuth();
   const [activeTab, setActiveTab] = useState<AdminTab>('approval');
 
+  const handleHomeNavigate = (tab: MemberTab) => {
+    if (tab === 'announcements') {
+      setActiveTab('announcementManager');
+      return;
+    }
+    if (tab === 'upload') {
+      setActiveTab('upload');
+      return;
+    }
+    if (tab === 'info') {
+      setActiveTab('info');
+      return;
+    }
+    setActiveTab('home');
+  };
+
   const tabs = [
     { id: 'approval' as const, label: '가입 승인', icon: Users },
-    { id: 'announcements' as const, label: '공지사항 작성', icon: FileText },
+    { id: 'announcementManager' as const, label: '공지사항 작성', icon: FileText },
     { id: 'attendance' as const, label: '출석 체크', icon: CalendarCheck },
+    { id: 'home' as const, label: '홈', icon: HomeIcon },
+    { id: 'upload' as const, label: '스터디 내용 올리기', icon: Upload },
+    { id: 'info' as const, label: '내 정보', icon: User },
   ];
 
   return (
@@ -33,7 +71,29 @@ export default function AdminLayout() {
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
-          {tabs.map((tab) => (
+          <div className="text-xs font-semibold uppercase text-slate-400 px-4 pb-2">
+            관리자 기능
+          </div>
+          {tabs.slice(0, 3).map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-slate-800 text-white'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <tab.icon className="w-5 h-5" />
+              {tab.label}
+            </button>
+          ))}
+
+          <div className="border-t border-slate-100 my-3" />
+          <div className="text-xs font-semibold uppercase text-slate-400 px-4 pb-2">
+            멤버 기능
+          </div>
+          {tabs.slice(3).map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -68,8 +128,11 @@ export default function AdminLayout() {
 
       <main className="flex-1 p-8">
         {activeTab === 'approval' && <ApprovalList />}
-        {activeTab === 'announcements' && <AnnouncementManager />}
+        {activeTab === 'announcementManager' && <AnnouncementManager />}
         {activeTab === 'attendance' && <AttendanceManager />}
+        {activeTab === 'home' && <Home onNavigate={handleHomeNavigate} />}
+        {activeTab === 'upload' && <StudyPosts />}
+        {activeTab === 'info' && <MyInfo />}
       </main>
     </div>
   );

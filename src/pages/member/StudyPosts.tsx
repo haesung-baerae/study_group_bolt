@@ -3,9 +3,15 @@ import { supabase, StudyPost } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Upload, Plus, X, CheckCircle, AlertCircle, FileText } from 'lucide-react';
 
+type StudyPostWithAuthor = StudyPost & {
+  author: {
+    name: string;
+  } | null;
+};
+
 export default function StudyPosts() {
   const { profile } = useAuth();
-  const [posts, setPosts] = useState<StudyPost[]>([]);
+  const [posts, setPosts] = useState<StudyPostWithAuthor[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -21,11 +27,11 @@ export default function StudyPosts() {
   const fetchPosts = async () => {
     const { data, error } = await supabase
       .from('study_posts')
-      .select('*')
+      .select('*, author:profiles(name)')
       .order('created_at', { ascending: false });
 
     if (!error && data) {
-      setPosts(data as StudyPost[]);
+      setPosts(data as StudyPostWithAuthor[]);
     }
     setLoading(false);
   };
@@ -211,7 +217,10 @@ export default function StudyPosts() {
                   </span>
                 )}
               </div>
-              <h4 className="font-medium text-slate-800">{post.title}</h4>
+              <div className="flex items-center justify-between gap-3 mb-2 text-slate-500 text-sm">
+                <h4 className="font-medium text-slate-800">{post.title}</h4>
+                <span>{post.author?.name ?? '작성자 미정'}</span>
+              </div>
               <p className="text-sm text-slate-600 mt-2 whitespace-pre-wrap line-clamp-3">
                 {post.content}
               </p>

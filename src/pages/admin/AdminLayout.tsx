@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import ApprovalList from './ApprovalList';
 import AnnouncementManager from './AnnouncementManager';
 import AttendanceManager from './AttendanceManager';
+import AttendanceStats from './AttendanceStats';
 import Home from '../member/Home';
 import StudyPosts from '../member/StudyPosts';
 import MyInfo from '../member/MyInfo';
@@ -15,6 +16,7 @@ import {
   HomeIcon,
   Upload,
   User,
+  TrendingUp,
 } from 'lucide-react';
 
 type MemberTab = 'home' | 'announcements' | 'upload' | 'info';
@@ -22,6 +24,7 @@ type AdminTab =
   | 'approval'
   | 'announcementManager'
   | 'attendance'
+  | 'stats'
   | 'home'
   | 'upload'
   | 'info';
@@ -50,6 +53,7 @@ export default function AdminLayout() {
     { id: 'approval' as const, label: '가입 승인', icon: Users },
     { id: 'announcementManager' as const, label: '공지사항 작성', icon: FileText },
     { id: 'attendance' as const, label: '출석 체크', icon: CalendarCheck },
+    { id: 'stats' as const, label: '출석 통계', icon: TrendingUp },
     { id: 'home' as const, label: '홈', icon: HomeIcon },
     { id: 'upload' as const, label: '스터디 내용 올리기', icon: Upload },
     { id: 'info' as const, label: '내 정보', icon: User },
@@ -74,7 +78,7 @@ export default function AdminLayout() {
           <div className="text-xs font-semibold uppercase text-slate-400 px-4 pb-2">
             관리자 기능
           </div>
-          {tabs.slice(0, 3).map((tab) => (
+          {tabs.slice(0, 4).map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -93,7 +97,7 @@ export default function AdminLayout() {
           <div className="text-xs font-semibold uppercase text-slate-400 px-4 pb-2">
             멤버 기능
           </div>
-          {tabs.slice(3).map((tab) => (
+          {tabs.slice(4).map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -130,6 +134,7 @@ export default function AdminLayout() {
         {activeTab === 'approval' && <ApprovalList />}
         {activeTab === 'announcementManager' && <AnnouncementManager />}
         {activeTab === 'attendance' && <AttendanceManager />}
+        {activeTab === 'stats' && <AttendanceStats />}
         {activeTab === 'home' && <Home onNavigate={handleHomeNavigate} />}
         {activeTab === 'upload' && <StudyPosts />}
         {activeTab === 'info' && <MyInfo />}

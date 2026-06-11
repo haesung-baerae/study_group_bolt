@@ -9,7 +9,7 @@ export default function AttendanceManager() {
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split('T')[0]
   );
-  const [presentIds, setPresentIds] = useState<string[]>([]);
+  const [attendanceStatuses, setAttendanceStatuses] = useState<Record<string, '출석' | '결석'>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -41,30 +41,44 @@ export default function AttendanceManager() {
     const { data, error } = await supabase
       .from('attendance_records')
       .select('*')
-      .eq('date', selectedDate)
-      .single();
+      .eq('date', selectedDate);
 
     if (!error && data) {
-      setPresentIds(data.present_ids || []);
+      const statusMap = (data as any[]).reduce<Record<string, '출석' | '결석'>>((acc, record) => {
+        if (record.user_id) {
+          acc[record.user_id] = record.status;
+        }
+        return acc;
+      }, {});
+      setAttendanceStatuses(statusMap);
     } else {
-      setPresentIds([]);
+      setAttendanceStatuses({});
     }
   };
 
   const toggleAttendance = (userId: string) => {
-    setPresentIds((prev) =>
-      prev.includes(userId)
-        ? prev.filter((id) => id !== userId)
-        : [...prev, userId]
-    );
+    setAttendanceStatuses((prev) => ({
+      ...prev,
+      [userId]: prev[userId] === '출석' ? '결석' : '출석',
+    }));
   };
 
   const selectAll = () => {
-    setPresentIds(members.map((m) => m.id));
+    setAttendanceStatuses(
+      members.reduce((acc, member) => {
+        acc[member.id] = '출석';
+        return acc;
+      }, {} as Record<string, '출석' | '결석'>)
+    );
   };
 
   const deselectAll = () => {
-    setPresentIds([]);
+    setAttendanceStatuses(
+      members.reduce((acc, member) => {
+        acc[member.id] = '결석';
+        return acc;
+      }, {} as Record<string, '출석' | '결석'>)
+    );
   };
 
   const handleSave = async () => {
@@ -72,13 +86,15 @@ export default function AttendanceManager() {
     setSaving(true);
     setMessage(null);
 
-    const { error: upsertError } = await supabase.from('attendance_records').upsert(
-      {
-        date: selectedDate,
-        present_ids: presentIds,
-      },
-      { onConflict: 'date' }
-    );
+    const records = members.map((member) => ({
+      date: selectedDate,
+      user_id: member.id,
+      status: attendanceStatuses[member.id] || '결석',
+    }));
+
+    const { error: upsertError } = await supabase
+      .from('attendance_records')
+      .upsert(records, { onConflict: ['date', 'user_id'] });
 
     if (upsertError) {
       setMessage({ type: 'error', text: '출석 정보 저장에 실패했습니다.' });
@@ -160,33 +176,41 @@ export default function AttendanceManager() {
         )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {members.map((member) => (
-            <button
-              key={member.id}
-              onClick={() => toggleAttendance(member.id)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
-                presentIds.includes(member.id)
-                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                  : 'border-slate-200 hover:border-slate-300 text-slate-600'
-              }`}
-            >
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  presentIds.includes(member.id)
-                    ? 'bg-emerald-200 text-emerald-700'
-                    : 'bg-slate-200'
+          {members.map((member) => {
+            const isPresent = attendanceStatuses[member.id] === '출석';
+            return (
+              <button
+                key={member.id}
+                onClick={() => toggleAttendance(member.id)}
+                className={`flex flex-col items-start gap-2 px-3 py-3 rounded-xl border transition-all text-left ${
+                  isPresent
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                    : 'border-slate-200 hover:border-slate-300 text-slate-600 bg-white'
                 }`}
               >
-                {member.name.charAt(0)}
-              </div>
-              <span className="text-sm truncate">{member.name}</span>
-            </button>
-          ))}
+                <div className="flex items-center gap-2 w-full">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      isPresent ? 'bg-emerald-200 text-emerald-700' : 'bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    {member.name.charAt(0)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{member.name}</p>
+                    <p className={`text-xs mt-0.5 ${isPresent ? 'text-emerald-700' : 'text-slate-500'}`}>
+                      {isPresent ? '출석' : '결석'}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
           <p className="text-sm text-slate-500">
-            출석: {presentIds.length} / {members.length}명
+            출석: {members.filter((member) => attendanceStatuses[member.id] === '출석').length} / {members.length}명
           </p>
           <button
             onClick={handleSave}

@@ -90,8 +90,11 @@ CREATE POLICY "study_posts_delete_own" ON study_posts FOR DELETE
 
 -- attendance_records
 CREATE TABLE IF NOT EXISTS attendance_records (
-  date date PRIMARY KEY,
-  present_ids uuid[] NOT NULL DEFAULT '{}'
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  date date NOT NULL,
+  user_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  status text NOT NULL CHECK (status IN ('출석', '결석')),
+  UNIQUE (date, user_id)
 );
 
 ALTER TABLE attendance_records ENABLE ROW LEVEL SECURITY;

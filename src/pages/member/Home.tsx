@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { supabase, Announcement, AttendanceRecord } from '../../lib/supabase';
+import { supabase, Announcement } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { BookOpen, Clock, Calendar as CalendarIcon, ArrowRight } from 'lucide-react';
 
@@ -32,17 +32,19 @@ export default function Home({ onNavigate }: Props) {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(3),
-      supabase.from('attendance_records').select('*'),
+      supabase
+        .from('attendance_records')
+        .select('date')
+        .eq('user_id', profile!.id)
+        .eq('status', '출석'),
       supabase.from('study_posts').select('*, author:profiles(name)').order('created_at', { ascending: false }),
     ]);
 
     if (announcementsRes.data) {
       setAnnouncements(announcementsRes.data as Announcement[]);
     }
-    if (attendanceRes.data && profile) {
-      const userAttendanceDates = attendanceRes.data
-        .filter((r: AttendanceRecord) => r.present_ids.includes(profile.id))
-        .map((r: AttendanceRecord) => r.date);
+    if (attendanceRes.data) {
+      const userAttendanceDates = (attendanceRes.data as { date: string }[]).map((r) => r.date);
       setAttendanceDates(userAttendanceDates);
     }
     if (studyPostsRes.data) {

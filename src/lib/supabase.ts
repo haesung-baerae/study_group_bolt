@@ -37,6 +37,8 @@ export type StudyPost = {
 };
 
 export type AttendanceRecord = {
+  id: string;
   date: string;
-  present_ids: string[];
+  user_id: string;
+  status: '출석' | '결석';
 };
